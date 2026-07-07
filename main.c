@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 char *read_line() {
   char *line = NULL;
@@ -53,6 +56,29 @@ char **split_line(char *line) {
 
   tokens[position] = NULL;
   return tokens;
+}
+
+int launch(char **args) {
+  pid_t pid, wpid;
+  int status;
+
+  pid = fork();
+  if (pid == 0) {
+    // Child process
+    if (execvp(args[0], args) == -1) {
+      perror("butterfly");
+    }
+    exit(EXIT_FAILURE);
+  } else if (pid < 0) {
+    // forking error
+    perror("butterfly");
+  } else {
+    do {
+      wpid = waitpid(pid, &status, WUNTRACED);
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  }
+
+  return 1;
 }
 
 int loop() {
