@@ -1,39 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define RL_BUF_SIZE 1024
 char *read_line() {
-  int bufsize = RL_BUF_SIZE;
-  int position = 0;
-  char *buffer = malloc(sizeof(char) * bufsize);
-  int c;
+  char *line = NULL;
+  size_t bufsize = 0;
 
-  if (!buffer) {
-    fprintf(stderr, "butterfly: allocation error\n");
-    exit(EXIT_FAILURE);
-  }
-
-  while (1) {
-    c = getchar();
-
-    if (c == EOF || c == '\n') {
-      buffer[position] = '\0';
-      return buffer;
+  // gets the character from stdin and adds them to the lineptr, and reallocates
+  // like realloc if neccessary
+  if (getline(&line, &bufsize, stdin) == -1) {
+    // feof checks if the end of a given stream has been reached
+    if (feof(stdin)) {
+      exit(EXIT_SUCCESS);
     } else {
-      buffer[position] = c;
-    }
-
-    ++position;
-
-    if (position >= bufsize) {
-      bufsize += RL_BUF_SIZE;
-      buffer = realloc(buffer, bufsize);
-      if (!buffer) {
-        fprintf(stderr, "butterfly: allocation error\n");
-        exit(EXIT_FAILURE);
-      }
+      perror("readline");
+      exit(EXIT_FAILURE);
     }
   }
+
+  return line;
 }
 
 int loop() {
