@@ -5,7 +5,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-// TODO:
+// TODO: in the input prompt display the current directory
+// string parsing should be proper and not just differentiating with whitespace
+// if the user uses '~' in cd then expand it to $HOME
+// add a history
+// detect CTRL+C and kill the child process not the main shell
+// background processes should be able to be launched using &
+// cleanup the disowned processes when they die
+// let > mean that the outputs are put into a file
+// let < mean that the input come froms the file
+// pipe the output of a command to another
 
 char *builtinCmd[] = {"cd", "help", "exit"};
 
