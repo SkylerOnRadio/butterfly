@@ -5,6 +5,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+char *builtinCmd[] = {"cd", "help", "exit"};
+
+int cd(char **args);
+int help(char **args);
+int exitShell(char **args);
+
+int (*builtinFunc[])(char **) = {&cd, &exitShell, &help};
+
+int numOfbuiltin() { return sizeof(builtinCmd) / sizeof(char *); }
+
 char *read_line() {
   char *line = NULL;
   size_t bufsize = 0;
@@ -57,6 +67,29 @@ char **split_line(char *line) {
   tokens[position] = NULL;
   return tokens;
 }
+int cd(char **args) {
+  if (args[1] == NULL)
+    fprintf(stderr, "butterfly: expected argument to \"cd\"\n");
+  else {
+    if (chdir(args[1]) != 0)
+      perror("butterfly");
+  }
+
+  return 1;
+}
+
+int help(char **args) {
+  printf("Butterfly Shell\n");
+  printf("The following are built in:\n");
+
+  for (int i = 0; i < numOfbuiltin(); ++i) {
+    printf("  %s\n", builtinCmd[i]);
+  }
+  printf("Use the man command for info on other programs.\n");
+  return 1;
+}
+
+int exitShell(char **args) { return 0; }
 
 int launch(char **args) {
   pid_t pid, wpid;
@@ -79,6 +112,18 @@ int launch(char **args) {
   }
 
   return 1;
+}
+
+int execute(char **args) {
+  if (args[0] == NULL)
+    return 1;
+
+  for (int i = 0; i < numOfbuiltin(); ++i) {
+    if (strcmp(args[0], builtinCmd[i]) == 0)
+      return (*builtinFunc[i])(args);
+  }
+
+  return launch(args);
 }
 
 int loop() {
