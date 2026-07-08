@@ -1,4 +1,5 @@
 #include <linux/limits.h>
+#include <pwd.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,9 +8,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-// TODO: in the input prompt display the current directory
-// string parsing should be proper and not just differentiating with whitespace
-// if the user uses '~' in cd then expand it to $HOME
+// TODO:
+// string parsing should be proper and not just differentiating with
+// whitespace
 // add a history
 // detect CTRL+C and kill the child process not the main shell
 // background processes should be able to be launched using &
@@ -80,13 +81,24 @@ char **split_line(char *line) {
   tokens[position] = NULL;
   return tokens;
 }
+
 int cd(char **args) {
-  if (args[1] == NULL)
-    fprintf(stderr, "butterfly: expected argument to \"cd\"\n");
-  else {
-    if (chdir(args[1]) != 0)
+  // if the user uses ~ go to home dir
+  if (args[1] == NULL || strcmp(args[1], "~") == 0) {
+    const char *homedir;
+    if ((homedir = getenv("HOME")) == NULL)
+      /*gets the users id using getuid  and then getpwuid to get the password
+       * entry which includes the home directory of the user
+       */
+      homedir = getpwuid(getuid())->pw_dir;
+    if (homedir == NULL)
+      fprintf(stderr, "Home directory not found");
+    else if (chdir(homedir) != 0)
       perror("butterfly");
   }
+
+  else if (chdir(args[1]) != 0)
+    perror("butterfly");
 
   return 1;
 }
