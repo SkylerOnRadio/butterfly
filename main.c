@@ -1,3 +1,5 @@
+#include <linux/limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,27 +139,40 @@ int execute(char **args) {
   return launch(args);
 }
 
+char *getDir() {
+  char *path = getcwd(NULL, 0);
+  if (path == NULL) {
+    perror("butterfly");
+    return "";
+  }
+
+  return path;
+}
+
 int loop() {
   int exit = 0;
 
   char *line;
   char **tokens;
+  char *path;
 
   do {
-    printf("> ");
+    path = getDir();
+
+    printf("%s > ", path);
     line = read_line();
     tokens = split_line(line);
     exit = execute(tokens);
 
     free(line);
     free(tokens);
+    free(path);
   } while (exit != 0);
 
   return exit;
 }
 
 int main() {
-  printf("This is a shell for linux.\n");
 
   loop();
 
