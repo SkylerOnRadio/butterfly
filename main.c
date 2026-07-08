@@ -132,11 +132,12 @@ int loop() {
   char *line;
   char **tokens;
 
-  while (exit != -1) {
+  do {
     printf(">");
     line = read_line();
     tokens = split_line(line);
-  }
+    exit = execute(tokens);
+  } while (exit != 0);
 
   return exit;
 }
