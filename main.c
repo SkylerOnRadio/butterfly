@@ -5,13 +5,15 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// TODO:
+
 char *builtinCmd[] = {"cd", "help", "exit"};
 
 int cd(char **args);
 int help(char **args);
 int exitShell(char **args);
 
-int (*builtinFunc[])(char **) = {&cd, &exitShell, &help};
+int (*builtinFunc[])(char **) = {&cd, &help, &exitShell};
 
 int numOfbuiltin() { return sizeof(builtinCmd) / sizeof(char *); }
 
@@ -133,10 +135,13 @@ int loop() {
   char **tokens;
 
   do {
-    printf(">");
+    printf("> ");
     line = read_line();
     tokens = split_line(line);
     exit = execute(tokens);
+
+    free(line);
+    free(tokens);
   } while (exit != 0);
 
   return exit;
