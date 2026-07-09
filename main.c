@@ -1,6 +1,7 @@
 #include "parser.h"
 #include <linux/limits.h>
 #include <pwd.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,16 +10,18 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+static pid_t child_id = -1;
+
 // TODO:
-// string parsing should be proper and not just differentiating with
-// whitespace
-// add a history
 // detect CTRL+C and kill the child process not the main shell
 // background processes should be able to be launched using &
 // cleanup the disowned processes when they die
 // let > mean that the outputs are put into a file
 // let < mean that the input come froms the file
 // pipe the output of a command to another
+// string parser needs to handle ' quotes within " and " quotes within '
+// It also needs to handle \
+// add a history
 
 char *builtinCmd[] = {"cd", "help", "exit"};
 
@@ -84,23 +87,24 @@ int help(char **args) {
 int exitShell(char **args) { return 0; }
 
 int launch(char **args) {
-  pid_t pid, wpid;
+  pid_t wpid;
   int status;
 
-  pid = fork();
-  if (pid == 0) {
+  child_id = fork();
+  if (child_id == 0) {
     // Child process
     if (execvp(args[0], args) == -1) {
       perror("butterfly");
     }
     exit(EXIT_FAILURE);
-  } else if (pid < 0) {
+  } else if (child_id < 0) {
     // forking error
     perror("butterfly");
   } else {
     do {
-      wpid = waitpid(pid, &status, WUNTRACED);
+      wpid = waitpid(child_id, &status, WUNTRACED);
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    child_id = -1;
   }
 
   return 1;
@@ -151,7 +155,24 @@ int loop() {
   return exit;
 }
 
+void handleForceQuit(int sig) {
+  if (child_id != -1) {
+    kill(child_id, SIGKILL);
+    child_id = -1;
+  } else {
+    printf("\n>");
+    fflush(stdout);
+  }
+}
+
 int main() {
+  struct sigaction act;
+
+  act.sa_handler = handleForceQuit;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = SA_RESTART;
+
+  sigaction(SIGINT, &act, NULL);
 
   loop();
 
