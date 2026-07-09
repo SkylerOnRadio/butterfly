@@ -48,37 +48,95 @@ char *read_line() {
   return line;
 }
 
-#define TOK_BUFSIZE 64
-#define TOK_DELIM " \t\a\n\a"
-char **split_line(char *line) {
-  int bufsize = TOK_BUFSIZE;
-  char **tokens = malloc(bufsize * sizeof(char *));
+#define ARRAY_SIZE 64
+#define ARG_SIZE 1024
+
+char **parseLine(char *line) {
+  int tokSize = ARRAY_SIZE;
+  int argSize = ARG_SIZE;
+  // allocate tokens to hold tokSize pointers of char type
+  char **tokens = malloc(tokSize * sizeof(char *));
   char *token;
 
   if (!tokens) {
-    fprintf(stderr, "butterfly: allocation error\n");
+    fprintf(stderr, "butterfly: allocation error");
     exit(EXIT_FAILURE);
   }
 
   int position = 0;
-  token = strtok(line, TOK_DELIM);
-  while (token != NULL) {
-    tokens[position] = token;
-    ++position;
+  int i = 0;
+  int count = 0;
+  int loop = 1;
 
-    if (position >= bufsize) {
-      bufsize += TOK_BUFSIZE;
-      tokens = realloc(tokens, bufsize);
-      if (!tokens) {
-        fprintf(stderr, "butterfly: allocation error\n");
+  token = malloc(argSize * sizeof(char));
+  while (loop != 0) {
+    if (line[i] == ' ' || line[i] == '"' || line[i] == '\0' ||
+        line[i] == '\n') {
+      switch (line[i]) {
+      case ' ': {
+        if (!(position > 0))
+          break;
+        token[position] = '\0';
+        tokens[count] = token;
+        ++count;
+        argSize = ARG_SIZE;
+        token = malloc(argSize);
+        position = 0;
+        break;
+      }
+
+      case '\n': {
+        if (!(position > 0))
+          break;
+        token[position] = '\0';
+        tokens[count] = token;
+        ++count;
+        argSize = ARG_SIZE;
+        token = malloc(argSize);
+        position = 0;
+        break;
+      }
+
+      case '\0':
+        if (position > 0) {
+          token[position] = '\0';
+          tokens[count] = token;
+          ++count;
+          position = 0;
+        }
+        tokens[count] = NULL;
+        loop = 0;
+        break;
+      }
+
+      if (count >= tokSize) {
+        tokSize += ARRAY_SIZE;
+        tokens = realloc(tokens, tokSize * sizeof(char *));
+
+        if (!tokens) {
+          perror("butterfly");
+          exit(EXIT_FAILURE);
+        }
+      }
+    } else {
+      token[position] = line[i];
+      ++position;
+    }
+
+    // makes sure that the position is never at the last usuable byte of memory
+    if (position >= argSize) {
+      argSize += ARG_SIZE;
+      token = realloc(token, argSize * sizeof(char));
+
+      if (!token) {
+        perror("butterfly");
         exit(EXIT_FAILURE);
       }
     }
 
-    token = strtok(NULL, TOK_DELIM);
+    ++i;
   }
 
-  tokens[position] = NULL;
   return tokens;
 }
 
@@ -173,7 +231,7 @@ int loop() {
 
     printf("%s > ", path);
     line = read_line();
-    tokens = split_line(line);
+    tokens = parseLine(line);
     exit = execute(tokens);
 
     free(line);
