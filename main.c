@@ -1,3 +1,4 @@
+#include "parser.h"
 #include <linux/limits.h>
 #include <pwd.h>
 #include <stdbool.h>
@@ -46,98 +47,6 @@ char *read_line() {
   }
 
   return line;
-}
-
-#define ARRAY_SIZE 64
-#define ARG_SIZE 1024
-
-char **parseLine(char *line) {
-  int tokSize = ARRAY_SIZE;
-  int argSize = ARG_SIZE;
-  // allocate tokens to hold tokSize pointers of char type
-  char **tokens = malloc(tokSize * sizeof(char *));
-  char *token;
-
-  if (!tokens) {
-    fprintf(stderr, "butterfly: allocation error");
-    exit(EXIT_FAILURE);
-  }
-
-  int position = 0;
-  int i = 0;
-  int count = 0;
-  int loop = 1;
-
-  token = malloc(argSize * sizeof(char));
-  while (loop != 0) {
-    if (line[i] == ' ' || line[i] == '"' || line[i] == '\0' ||
-        line[i] == '\n') {
-      switch (line[i]) {
-      case ' ': {
-        if (!(position > 0))
-          break;
-        token[position] = '\0';
-        tokens[count] = token;
-        ++count;
-        argSize = ARG_SIZE;
-        token = malloc(argSize);
-        position = 0;
-        break;
-      }
-
-      case '\n': {
-        if (!(position > 0))
-          break;
-        token[position] = '\0';
-        tokens[count] = token;
-        ++count;
-        argSize = ARG_SIZE;
-        token = malloc(argSize);
-        position = 0;
-        break;
-      }
-
-      case '\0':
-        if (position > 0) {
-          token[position] = '\0';
-          tokens[count] = token;
-          ++count;
-          position = 0;
-        }
-        tokens[count] = NULL;
-        loop = 0;
-        break;
-      }
-
-      if (count >= tokSize) {
-        tokSize += ARRAY_SIZE;
-        tokens = realloc(tokens, tokSize * sizeof(char *));
-
-        if (!tokens) {
-          perror("butterfly");
-          exit(EXIT_FAILURE);
-        }
-      }
-    } else {
-      token[position] = line[i];
-      ++position;
-    }
-
-    // makes sure that the position is never at the last usuable byte of memory
-    if (position >= argSize) {
-      argSize += ARG_SIZE;
-      token = realloc(token, argSize * sizeof(char));
-
-      if (!token) {
-        perror("butterfly");
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    ++i;
-  }
-
-  return tokens;
 }
 
 int cd(char **args) {
