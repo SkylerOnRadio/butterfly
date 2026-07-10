@@ -2,4 +2,4 @@ cmake_minimum_required(VERSION 3.10)
 
 project(butterfly C)
 
-add_executable(butterfly main.c parser.c)
+add_executable(butterfly main.c parser.c backgroundJobs.c)

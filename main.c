@@ -1,3 +1,4 @@
+#include "backgroundJobs.h"
 #include "parser.h"
 #include <linux/limits.h>
 #include <pwd.h>
@@ -11,11 +12,12 @@
 #include <unistd.h>
 
 static pid_t child_id = -1;
+Job *backgroundJobs;
 
 // TODO:
-// detect CTRL+C and kill the child process not the main shell
 // background processes should be able to be launched using &
 // cleanup the disowned processes when they die
+// write built-in functions for clear, pwd and kill
 // let > mean that the outputs are put into a file
 // let < mean that the input come froms the file
 // pipe the output of a command to another
@@ -86,7 +88,7 @@ int help(char **args) {
 
 int exitShell(char **args) { return 0; }
 
-int launch(char **args) {
+int launch(char **args, bool disown) {
   pid_t wpid;
   int status;
 
@@ -101,9 +103,15 @@ int launch(char **args) {
     // forking error
     perror("butterfly");
   } else {
-    do {
-      wpid = waitpid(child_id, &status, WUNTRACED);
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    if (!disown) {
+      do {
+        wpid = waitpid(child_id, &status, WUNTRACED);
+      } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    } else {
+      Job *job =
+          addBackgroundJob(&backgroundJobs, child_id, joinArguments(args));
+      fprintf(stderr, "[%d]: %d\n", job->job_id, job->process_id);
+    }
     child_id = -1;
   }
 
@@ -114,12 +122,22 @@ int execute(char **args) {
   if (args[0] == NULL)
     return 1;
 
+  int i = 0;
+  while (args[i + 1] != NULL)
+    ++i;
+
+  bool disown = false;
+  if (strcmp(args[i], "&") == 0) {
+    args[i] = NULL;
+    disown = true;
+  }
+
   for (int i = 0; i < numOfbuiltin(); ++i) {
     if (strcmp(args[0], builtinCmd[i]) == 0)
       return (*builtinFunc[i])(args);
   }
 
-  return launch(args);
+  return launch(args, disown);
 }
 
 char *getDir() {
@@ -165,14 +183,31 @@ void handleForceQuit(int sig) {
   }
 }
 
+void handleChildProcessDying(int sig) {
+  pid_t pid;
+  int status;
+
+  while ((pid = waitpid(-1, &status, WNOHANG)) != -1) {
+    deleteBackgroundJob(pid, &backgroundJobs);
+  }
+}
+
 int main() {
-  struct sigaction act;
+  struct sigaction actChild, actInt;
 
-  act.sa_handler = handleForceQuit;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags = SA_RESTART;
+  actInt.sa_handler = handleForceQuit;
+  sigemptyset(&actInt.sa_mask);
+  actInt.sa_flags = SA_RESTART;
 
-  sigaction(SIGINT, &act, NULL);
+  actChild.sa_handler = handleChildProcessDying;
+  sigemptyset(&actChild.sa_mask);
+  actChild.sa_flags = SA_RESTART;
+
+  sigaction(SIGINT, &actInt, NULL);
+  sigaction(SIGCHLD, &actChild, NULL);
+
+  backgroundJobs = malloc(sizeof(Job));
+  backgroundJobs = NULL;
 
   loop();
 
