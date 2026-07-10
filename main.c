@@ -13,6 +13,7 @@
 
 static pid_t child_id = -1;
 Job *backgroundJobs;
+static volatile sig_atomic_t gotSigchld = 0;
 
 // TODO:
 // background processes should be able to be launched using &
@@ -158,6 +159,15 @@ int loop() {
   char *path;
 
   do {
+    if (gotSigchld) {
+      gotSigchld = 0;
+      pid_t pid;
+      int status;
+      while ((pid = (waitpid(-1, &status, WNOHANG))) > 0) {
+        deleteBackgroundJob(pid, &backgroundJobs);
+      }
+    }
+
     path = getDir();
 
     printf("%s > ", path);
@@ -187,8 +197,8 @@ void handleChildProcessDying(int sig) {
   pid_t pid;
   int status;
 
-  while ((pid = waitpid(-1, &status, WNOHANG)) != -1) {
-    deleteBackgroundJob(pid, &backgroundJobs);
+  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+    gotSigchld = 1;
   }
 }
 
