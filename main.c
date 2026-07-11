@@ -2,6 +2,7 @@
 #include "builtin.h"
 #include "parser.h"
 #include "utility.h"
+#include <fcntl.h>
 #include <linux/limits.h>
 #include <pwd.h>
 #include <signal.h>
@@ -86,6 +87,12 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
 
     pid = fork();
     if (pid == 0) {
+      int index = isToBePutToAFile(args);
+      if (index != -1) {
+        setOutputToFile(args, index);
+        args[index] = NULL;
+      }
+
       func_ptr(args);
       exit(EXIT_SUCCESS);
     } else if (pid < 0) {
@@ -97,7 +104,31 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
     return 1;
 
   } else {
-    return func_ptr(args);
+    int index = isToBePutToAFile(args);
+    int saved_stdout = -1;
+    if (index != -1) {
+      int fd = open(args[index + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      if (fd < 0) {
+        perror("butterfly");
+        return 1;
+      }
+
+      saved_stdout = dup(STDOUT_FILENO);
+
+      dup2(fd, STDOUT_FILENO);
+      close(fd);
+
+      args[index] = NULL;
+    }
+
+    int returnVal = func_ptr(args);
+
+    if (saved_stdout != -1) {
+      dup2(saved_stdout, STDOUT_FILENO);
+      close(saved_stdout);
+    }
+
+    return returnVal;
   }
 }
 
