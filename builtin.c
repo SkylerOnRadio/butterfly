@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-char *builtin[] = {"cd", "help", "exit", "echo"};
+char *builtin[] = {"cd", "help", "exit", "echo", "pwd"};
 
 int numOfbuiltin() { return sizeof(builtin) / sizeof(char *); }
 
@@ -58,4 +58,21 @@ int echo(char **args) {
   return 1;
 }
 
-int (*builtinFunc[])(char **) = {&cd, &help, &exitShell, &echo};
+int pwd(char **args) {
+  if (args[1] != NULL) {
+    fprintf(stderr, "pwd: too many arguments\n");
+    return 1;
+  }
+
+  char *path = getcwd(NULL, 0);
+  if (path == NULL) {
+    perror("butterfly");
+    exit(EXIT_FAILURE);
+  }
+
+  fprintf(stdout, "%s\n", path);
+  free(path);
+  return 1;
+}
+
+int (*builtinFunc[])(char **) = {&cd, &help, &exitShell, &echo, &pwd};
