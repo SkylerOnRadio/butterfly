@@ -1,6 +1,8 @@
 #include "backgroundJobs.h"
 #include "builtin.h"
 #include "parser.h"
+#include "utility.h"
+#include <fcntl.h>
 #include <linux/limits.h>
 #include <pwd.h>
 #include <signal.h>
@@ -17,7 +19,6 @@ static volatile sig_atomic_t gotSigchld = 0;
 Job *backgroundJobs;
 
 // TODO:
-// write built-in functions for clear, pwd and kill
 // let > mean that the outputs are put into a file
 // let < mean that the input come froms the file
 // pipe the output of a command to another
@@ -43,6 +44,7 @@ char *read_line() {
 
   return line;
 }
+
 int launch(char **args, bool disown) {
   pid_t wpid;
   int status;
@@ -50,6 +52,26 @@ int launch(char **args, bool disown) {
   child_id = fork();
   if (child_id == 0) {
     // Child process
+    int index = isToBePutToAFile(args);
+    if (index != -1) {
+      fprintf(stdout, "does this even work?\n");
+      // open is POSIX level file opener, the arguments are write only or create
+      // or truncate(wipe out previously existing text to nothing), 0644 is
+      // octal number more specifically open requires to know what permissions
+      // to give to the file, 0 tells it is a octal number and the number maps
+      // to rw-r--r--
+      int fd = open(args[index + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      if (fd < 0) {
+        perror("butterfly");
+        exit(EXIT_FAILURE);
+      }
+
+      dup2(fd, STDOUT_FILENO);
+
+      close(fd);
+
+      args[index] = NULL;
+    }
     if (execvp(args[0], args) == -1) {
       perror("butterfly");
       exit(EXIT_FAILURE);
