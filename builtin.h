@@ -8,6 +8,7 @@ extern char *builtin[];
 int cd(char **args);
 int help(char **args);
 int exitShell(char **args);
+int echo(char **args);
 
 int numOfbuiltin();
 

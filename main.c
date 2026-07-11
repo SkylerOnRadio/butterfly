@@ -17,8 +17,6 @@ static volatile sig_atomic_t gotSigchld = 0;
 Job *backgroundJobs;
 
 // TODO:
-// background processes should be able to be launched using &
-// cleanup the disowned processes when they die
 // write built-in functions for clear, pwd and kill
 // let > mean that the outputs are put into a file
 // let < mean that the input come froms the file

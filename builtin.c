@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-char *builtin[] = {"cd", "help", "exit"};
+char *builtin[] = {"cd", "help", "exit", "echo"};
 
 int numOfbuiltin() { return sizeof(builtin) / sizeof(char *); }
 
@@ -47,4 +47,15 @@ int help(char **args) {
 
 int exitShell(char **args) { return 0; }
 
-int (*builtinFunc[])(char **) = {&cd, &help, &exitShell};
+int echo(char **args) {
+  fprintf(stdout, "Works in-built\n");
+  for (int i = 1; args[i] != NULL; ++i) {
+    fprintf(stdout, "%s", args[i]);
+    if (args[i + 1] != NULL)
+      fprintf(stdout, " ");
+  }
+  fprintf(stdout, "\n");
+  return 1;
+}
+
+int (*builtinFunc[])(char **) = {&cd, &help, &exitShell, &echo};
