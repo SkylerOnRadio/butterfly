@@ -1,6 +1,8 @@
 #ifndef BUILTIN_H
 #define BUILTIN_H
 
+#include <stdbool.h>
+
 extern char *builtin[];
 
 int cd(char **args);

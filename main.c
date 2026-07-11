@@ -13,8 +13,8 @@
 #include <unistd.h>
 
 static pid_t child_id = -1;
-Job *backgroundJobs;
 static volatile sig_atomic_t gotSigchld = 0;
+Job *backgroundJobs;
 
 // TODO:
 // background processes should be able to be launched using &
@@ -54,8 +54,9 @@ int launch(char **args, bool disown) {
     // Child process
     if (execvp(args[0], args) == -1) {
       perror("butterfly");
+      exit(EXIT_FAILURE);
     }
-    exit(EXIT_FAILURE);
+    exit(EXIT_SUCCESS);
   } else if (child_id < 0) {
     // forking error
     perror("butterfly");
@@ -75,6 +76,27 @@ int launch(char **args, bool disown) {
   return 1;
 }
 
+int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
+  if (disown) {
+    pid_t pid;
+
+    pid = fork();
+    if (pid == 0) {
+      func_ptr(args);
+      exit(EXIT_SUCCESS);
+    } else if (pid < 0) {
+      perror("butterfly");
+    } else {
+      Job *job = addBackgroundJob(&backgroundJobs, pid, joinArguments(args));
+      fprintf(stderr, "[%d]: %d\n", job->job_id, job->process_id);
+    }
+    return 1;
+
+  } else {
+    return func_ptr(args);
+  }
+}
+
 int execute(char **args) {
   if (args[0] == NULL)
     return 1;
@@ -91,7 +113,7 @@ int execute(char **args) {
 
   for (int i = 0; i < numOfbuiltin(); ++i) {
     if (strcmp(args[0], builtin[i]) == 0)
-      return (*builtinFunc[i])(args);
+      return executeBuiltin(builtinFunc[i], args, disown);
   }
 
   return launch(args, disown);
