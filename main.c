@@ -29,7 +29,6 @@ Job *backgroundJobs;
 char *read_line() {
   char *line = NULL;
   size_t bufsize = 0;
-
   // gets the character from stdin and adds them to the lineptr, and reallocates
   // like realloc if neccessary
   if (getline(&line, &bufsize, stdin) == -1) {
@@ -107,7 +106,13 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
     int index = isToBePutToAFile(args);
     int saved_stdout = -1;
     if (index != -1) {
-      int fd = open(args[index + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      int fd;
+
+      if (strcmp(args[index], ">") == 0)
+        fd = open(args[index + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      else
+        fd = open(args[index + 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
+
       if (fd < 0) {
         perror("butterfly");
         return 1;

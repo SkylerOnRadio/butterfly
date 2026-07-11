@@ -7,8 +7,7 @@
 
 int isToBePutToAFile(char **args) {
   for (int i = 0; args[i] != NULL; ++i) {
-    if (strcmp(args[i], ">") == 0) {
-      args[i] = NULL;
+    if (strcmp(args[i], ">") == 0 || strcmp(args[i], ">>") == 0) {
       return i;
     }
   }
@@ -21,7 +20,15 @@ int setOutputToFile(char **args, int index) {
   // octal number more specifically open requires to know what permissions
   // to give to the file, 0 tells it is a octal number and the number maps
   // to rw-r--r--
-  int fd = open(args[index + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  int fd;
+
+  // if > then use truncating file, else use appending  file, since either '>'
+  // or '>>' exits for sure
+  if (strcmp(args[index], ">") == 0)
+    fd = open(args[index + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  else
+    fd = open(args[index + 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
+
   if (fd < 0) {
     perror("butterfly");
     exit(EXIT_FAILURE);
