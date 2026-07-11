@@ -1,4 +1,5 @@
 #include "backgroundJobs.h"
+#include "builtin.h"
 #include "parser.h"
 #include <linux/limits.h>
 #include <pwd.h>
@@ -26,16 +27,6 @@ static volatile sig_atomic_t gotSigchld = 0;
 // It also needs to handle \
 // add a history
 
-char *builtinCmd[] = {"cd", "help", "exit"};
-
-int cd(char **args);
-int help(char **args);
-int exitShell(char **args);
-
-int (*builtinFunc[])(char **) = {&cd, &help, &exitShell};
-
-int numOfbuiltin() { return sizeof(builtinCmd) / sizeof(char *); }
-
 char *read_line() {
   char *line = NULL;
   size_t bufsize = 0;
@@ -54,41 +45,6 @@ char *read_line() {
 
   return line;
 }
-
-int cd(char **args) {
-  // if the user uses ~ go to home dir
-  if (args[1] == NULL || strcmp(args[1], "~") == 0) {
-    const char *homedir;
-    if ((homedir = getenv("HOME")) == NULL)
-      /*gets the users id using getuid  and then getpwuid to get the password
-       * entry which includes the home directory of the user
-       */
-      homedir = getpwuid(getuid())->pw_dir;
-    if (homedir == NULL)
-      fprintf(stderr, "Home directory not found");
-    else if (chdir(homedir) != 0)
-      perror("butterfly");
-  }
-
-  else if (chdir(args[1]) != 0)
-    perror("butterfly");
-
-  return 1;
-}
-
-int help(char **args) {
-  printf("Butterfly Shell\n");
-  printf("The following are built in:\n");
-
-  for (int i = 0; i < numOfbuiltin(); ++i) {
-    printf("  %s\n", builtinCmd[i]);
-  }
-  printf("Use the man command for info on other programs.\n");
-  return 1;
-}
-
-int exitShell(char **args) { return 0; }
-
 int launch(char **args, bool disown) {
   pid_t wpid;
   int status;
@@ -134,7 +90,7 @@ int execute(char **args) {
   }
 
   for (int i = 0; i < numOfbuiltin(); ++i) {
-    if (strcmp(args[0], builtinCmd[i]) == 0)
+    if (strcmp(args[0], builtin[i]) == 0)
       return (*builtinFunc[i])(args);
   }
 
