@@ -97,6 +97,11 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
         setOutputToFile(args, index);
         args[index] = NULL;
       }
+      index = isToBeReadFromAFile(args);
+      if (index != -1) {
+        setInputFromFile(args, index);
+        args[index] = NULL;
+      }
 
       func_ptr(args);
       exit(EXIT_SUCCESS);
@@ -132,11 +137,32 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
       args[index] = NULL;
     }
 
+    index = isToBeReadFromAFile(args);
+    int saved_stdin = -1;
+    if (index != -1) {
+      int fd = open(args[index + 1], O_RDONLY);
+      if (fd < 0) {
+        perror("butterfly");
+        return 1;
+      }
+
+      saved_stdin = dup(STDIN_FILENO);
+
+      dup2(fd, STDIN_FILENO);
+      close(fd);
+
+      args[index] = NULL;
+    }
+
     int returnVal = func_ptr(args);
 
     if (saved_stdout != -1) {
       dup2(saved_stdout, STDOUT_FILENO);
       close(saved_stdout);
+    }
+    if (saved_stdin != -1) {
+      dup2(saved_stdin, STDIN_FILENO);
+      close(saved_stdin);
     }
 
     return returnVal;
