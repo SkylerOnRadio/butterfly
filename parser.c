@@ -87,6 +87,8 @@ char **parseLine(char *line) {
         token[position] = '\0';
         tokens[count] = token;
         ++count;
+      } else {
+        free(token);
       }
       if (count >= tokSize) {
         tokSize += ARRAY_SIZE;

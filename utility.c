@@ -47,6 +47,9 @@ int setOutputToFile(char **args, int index) {
 
   close(fd);
 
+  free(args[index + 1]);
+  free(args[index]);
+
   return 1;
 }
 
@@ -59,6 +62,9 @@ int setInputFromFile(char **args, int index) {
 
   dup2(fd, STDIN_FILENO);
   close(fd);
+
+  free(args[index + 1]);
+  free(args[index]);
 
   return 1;
 }

@@ -19,8 +19,6 @@ static volatile sig_atomic_t gotSigchld = 0;
 Job *backgroundJobs;
 
 // TODO:
-// let > mean that the outputs are put into a file
-// let < mean that the input come froms the file
 // pipe the output of a command to another
 // string parser needs to handle ' quotes within " and " quotes within '
 // It also needs to handle \
@@ -76,9 +74,10 @@ int launch(char **args, bool disown) {
         wpid = waitpid(child_id, &status, WUNTRACED);
       } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     } else {
-      Job *job =
-          addBackgroundJob(&backgroundJobs, child_id, joinArguments(args));
+      char *arg = joinArguments(args);
+      Job *job = addBackgroundJob(&backgroundJobs, child_id, arg);
       fprintf(stderr, "[%d]: %d\n", job->job_id, job->process_id);
+      free(arg);
     }
     child_id = -1;
   }
@@ -108,8 +107,10 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
     } else if (pid < 0) {
       perror("butterfly");
     } else {
-      Job *job = addBackgroundJob(&backgroundJobs, pid, joinArguments(args));
+      char *arg = joinArguments(args);
+      Job *job = addBackgroundJob(&backgroundJobs, pid, arg);
       fprintf(stderr, "[%d]: %d\n", job->job_id, job->process_id);
+      free(arg);
     }
     return 1;
 
@@ -134,6 +135,9 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
       dup2(fd, STDOUT_FILENO);
       close(fd);
 
+      free(args[index + 1]);
+      free(args[index]);
+
       args[index] = NULL;
     }
 
@@ -150,6 +154,9 @@ int executeBuiltin(int (*func_ptr)(char **), char **args, bool disown) {
 
       dup2(fd, STDIN_FILENO);
       close(fd);
+
+      free(args[index + 1]);
+      free(args[index]);
 
       args[index] = NULL;
     }
@@ -209,15 +216,6 @@ int loop() {
   char *path;
 
   do {
-    if (gotSigchld) {
-      gotSigchld = 0;
-      pid_t pid;
-      int status;
-      while ((pid = (waitpid(-1, &status, WNOHANG))) > 0) {
-        deleteBackgroundJob(pid, &backgroundJobs);
-      }
-    }
-
     path = getDir();
 
     printf("%s > ", path);
@@ -226,8 +224,19 @@ int loop() {
     exit = execute(tokens);
 
     free(line);
+    for (int i = 0; tokens[i] != NULL; ++i)
+      free(tokens[i]);
     free(tokens);
     free(path);
+
+    if (gotSigchld) {
+      gotSigchld = 0;
+      pid_t pid;
+      int status;
+      while ((pid = (waitpid(-1, &status, WNOHANG))) > 0) {
+        deleteBackgroundJob(pid, &backgroundJobs);
+      }
+    }
   } while (exit != 0);
 
   return exit;
@@ -243,12 +252,14 @@ void handleForceQuit(int sig) {
   }
 }
 
-void handleChildProcessDying(int sig) {
-  pid_t pid;
-  int status;
+void handleChildProcessDying(int sig) { gotSigchld = 1; }
 
-  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-    gotSigchld = 1;
+void freeAllJobs(Job *head) {
+  while (head != NULL) {
+    Job *next = head->nextJob;
+    free(head->command);
+    free(head);
+    head = next;
   }
 }
 
@@ -266,10 +277,9 @@ int main() {
   sigaction(SIGINT, &actInt, NULL);
   sigaction(SIGCHLD, &actChild, NULL);
 
-  backgroundJobs = malloc(sizeof(Job));
-  backgroundJobs = NULL;
-
   loop();
+
+  freeAllJobs(backgroundJobs);
 
   return 0;
 }
