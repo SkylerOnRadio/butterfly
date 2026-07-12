@@ -16,7 +16,6 @@
 
 static pid_t child_id = -1;
 static volatile sig_atomic_t gotSigchld = 0;
-Job *backgroundJobs;
 
 // TODO:
 // pipe the output of a command to another
