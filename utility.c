@@ -23,6 +23,48 @@ int isToBeReadFromAFile(char **args) {
   return -1;
 }
 
+int **pipeIndex(char **args) {
+  int arrSize = 1;
+  int **indexes = malloc(arrSize * sizeof(int *));
+  int *index = malloc(sizeof(int));
+  int count = 0;
+
+  if (indexes == NULL || index == NULL) {
+    perror("butterfly");
+    exit(EXIT_FAILURE);
+  }
+
+  indexes[count] = NULL;
+
+  for (int i = 0; args[i] != NULL; ++i) {
+    if (strcmp(args[i], "|") == 0) {
+      *index = i;
+      ++arrSize;
+      indexes = realloc(indexes, arrSize * sizeof(int *));
+      index = malloc(sizeof(int));
+      ++count;
+
+      if (indexes == NULL || index == NULL) {
+        perror("butterfly");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+
+  free(index);
+
+  arrSize++;
+  indexes = realloc(indexes, arrSize * sizeof(int *));
+  if (indexes == NULL) {
+    perror("butterfly");
+    exit(EXIT_FAILURE);
+  }
+
+  indexes[count] = NULL;
+
+  return indexes;
+}
+
 int setOutputToFile(char **args, int index) {
   // open is POSIX level file opener, the arguments are write only or create
   // or truncate(wipe out previously existing text to nothing), 0644 is
