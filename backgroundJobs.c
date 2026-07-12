@@ -75,32 +75,3 @@ void deleteBackgroundJob(pid_t process_id, Job **head) {
 
   free(tmp);
 }
-
-// a function to join all the arguments in the argument array
-char *joinArguments(char **args) {
-  if (args == NULL || args[0] == NULL)
-    return NULL;
-
-  char *joined;
-  int lenght = 0;
-
-  for (int i = 0; args[i] != NULL; ++i) {
-    lenght += strlen(args[i]) + 1;
-  }
-
-  joined = malloc(sizeof(char) * lenght);
-  if (joined == NULL) {
-    perror("butterfly");
-    exit(EXIT_FAILURE);
-  }
-
-  joined[0] = '\0';
-
-  for (int i = 0; args[i] != NULL; ++i) {
-    strcat(joined, args[i]);
-    if (args[i + 1] != NULL)
-      strcat(joined, " ");
-  }
-
-  return joined;
-}

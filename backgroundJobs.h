@@ -15,6 +15,5 @@ extern Job *backgroundJobs;
 
 Job *addBackgroundJob(Job **head, pid_t process_id, char *command);
 void deleteBackgroundJob(pid_t process_id, Job **head);
-char *joinArguments(char **args);
 
 #endif // !BACKGROUNDJOBS_H

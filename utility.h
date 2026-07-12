@@ -6,4 +6,6 @@ int isToBeReadFromAFile(char **args);
 int setOutputToFile(char **args, int index);
 int setInputFromFile(char **args, int index);
 
+char *joinArguments(char **args);
+
 #endif // !UTILITY_H
