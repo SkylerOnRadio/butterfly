@@ -14,6 +14,15 @@ int isToBePutToAFile(char **args) {
   return -1;
 }
 
+int isToBeReadFromAFile(char **args) {
+  for (int i = 0; args[i] != NULL; ++i) {
+    if (strcmp(args[i], "<") == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 int setOutputToFile(char **args, int index) {
   // open is POSIX level file opener, the arguments are write only or create
   // or truncate(wipe out previously existing text to nothing), 0644 is
@@ -36,6 +45,19 @@ int setOutputToFile(char **args, int index) {
 
   dup2(fd, STDOUT_FILENO);
 
+  close(fd);
+
+  return 1;
+}
+
+int setInputFromFile(char **args, int index) {
+  int fd = open(args[index + 1], O_RDONLY);
+  if (fd < 0) {
+    perror("butterfly");
+    exit(EXIT_FAILURE);
+  }
+
+  dup2(fd, STDIN_FILENO);
   close(fd);
 
   return 1;

@@ -48,7 +48,6 @@ int help(char **args) {
 int exitShell(char **args) { return 0; }
 
 int echo(char **args) {
-  fprintf(stdout, "Works in-built\n");
   for (int i = 1; args[i] != NULL; ++i) {
     fprintf(stdout, "%s", args[i]);
     if (args[i + 1] != NULL)

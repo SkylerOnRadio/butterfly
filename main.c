@@ -56,6 +56,12 @@ int launch(char **args, bool disown) {
       setOutputToFile(args, index);
       args[index] = NULL;
     }
+    index = isToBeReadFromAFile(args);
+    if (index != -1) {
+      setInputFromFile(args, index);
+      args[index] = NULL;
+    }
+
     if (execvp(args[0], args) == -1) {
       perror("butterfly");
       exit(EXIT_FAILURE);
