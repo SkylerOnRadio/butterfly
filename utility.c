@@ -34,11 +34,10 @@ int **pipeIndex(char **args) {
     exit(EXIT_FAILURE);
   }
 
-  indexes[count] = NULL;
-
   for (int i = 0; args[i] != NULL; ++i) {
     if (strcmp(args[i], "|") == 0) {
       *index = i;
+      indexes[count] = index;
       ++arrSize;
       indexes = realloc(indexes, arrSize * sizeof(int *));
       index = malloc(sizeof(int));

@@ -16,6 +16,8 @@
  * each calling a function call for each command then it would be sequencial
  */
 int handlePipedExecution(int **pipedIndex, char **args, bool disown) {
+  fprintf(stdout, "This is a test");
+
   // get the numOfPipes of the array containing the number of pipes
   int numOfPipes = 0;
   while (pipedIndex[numOfPipes] != NULL)
