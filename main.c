@@ -39,7 +39,7 @@ char *getDir() {
   char *path = getcwd(NULL, 0);
   if (path == NULL) {
     perror("butterfly");
-    return "";
+    return strdup("");
   }
 
   return path;
@@ -141,7 +141,7 @@ int main() {
 
       if (pid > 0) {
         deleteBackgroundJob(pid, &backgroundJobs);
-      } else if (pid < -1) {
+      } else if (pid < 0) {
         // error, or all children are dead
         break;
       }
