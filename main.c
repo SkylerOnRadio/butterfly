@@ -53,6 +53,15 @@ int loop() {
   char *path;
 
   do {
+    if (gotSigchld) {
+      gotSigchld = 0;
+      pid_t pid;
+      int status;
+      while ((pid = (waitpid(-1, &status, WNOHANG))) > 0) {
+        deleteBackgroundJob(pid, &backgroundJobs);
+      }
+    }
+
     path = getDir();
 
     printf("%s > ", path);
@@ -72,14 +81,6 @@ int loop() {
     free(tokens);
     free(path);
 
-    if (gotSigchld) {
-      gotSigchld = 0;
-      pid_t pid;
-      int status;
-      while ((pid = (waitpid(-1, &status, WNOHANG))) > 0) {
-        deleteBackgroundJob(pid, &backgroundJobs);
-      }
-    }
   } while (exit != 0);
 
   return exit;
