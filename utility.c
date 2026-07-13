@@ -90,7 +90,9 @@ int setOutputToFile(char **args, int index) {
   close(fd);
 
   free(args[index + 1]);
+  args[index + 1] = NULL;
   free(args[index]);
+  args[index] = NULL;
 
   return 1;
 }
@@ -105,8 +107,12 @@ int setInputFromFile(char **args, int index) {
   dup2(fd, STDIN_FILENO);
   close(fd);
 
+  // setting the indexes to null so that cleaner in the main loop skips these
+  // indexs and does not do a double free
   free(args[index + 1]);
+  args[index + 1] = NULL;
   free(args[index]);
+  args[index] = NULL;
 
   return 1;
 }
