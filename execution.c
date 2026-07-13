@@ -132,6 +132,11 @@ int execute(char **args) {
     args[count] = NULL;
   }
 
+  if (args[0] == NULL) {
+    fprintf(stderr, "& is the only argument given");
+    return 1;
+  }
+
   int **pipedIndex = pipeIndex(args);
 
   if (pipedIndex[0] != NULL) {
