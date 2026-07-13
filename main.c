@@ -124,6 +124,30 @@ int main() {
 
   loop();
 
+  if (backgroundJobs != NULL) {
+    fprintf(stderr, "There are still detached jobs running. The terminal will "
+                    "only exit after it completes.");
+    Job *tmp = backgroundJobs;
+
+    while (tmp != NULL) {
+      fprintf(stderr, "[%d]: %d", tmp->job_id, tmp->process_id);
+      tmp = tmp->nextJob;
+    }
+
+    while (backgroundJobs != NULL) {
+      int status;
+      // pause the shell till the process finishes
+      pid_t pid = waitpid(-1, &status, 0);
+
+      if (pid > 0) {
+        deleteBackgroundJob(pid, &backgroundJobs);
+      } else if (pid < -1) {
+        // error, or all children are dead
+        break;
+      }
+    }
+  }
+
   freeAllJobs(backgroundJobs);
 
   return 0;
