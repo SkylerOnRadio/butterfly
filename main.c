@@ -17,12 +17,6 @@ static volatile sig_atomic_t gotSigchld = 0;
 pid_t child_pid = -1;
 Job *backgroundJobs = NULL;
 
-// TODO:
-// pipe the output of a command to another
-// string parser needs to handle ' quotes within " and " quotes within '
-// It also needs to handle \
-// add a history
-
 char *read_line() {
   char *line = NULL;
   size_t bufsize = 0;

@@ -83,10 +83,22 @@ sleep 10 &
 ```
 
 The shell prompt returns immediately, and Butterfly notifies you once the background process finishes.
+
+### 4. Piping
+
+Using `|` between commands pipes the output of the previous command to the next command
+
+Example usage:
+```bash
+cat example.txt | grep "test"
+```
+
 ## Other Things
 
 I made this project to test out forking and other systems level functions and programming, while the process has been enjoyable and interesting, the abstraction of the various functions does drive me with curiosity to know how they function underneath. I do find the documentation rather difficult to understand for someone with minimal knowledge about systems programming (I still don't really understand what streams are?) but they are still immensely helpful. Stackoverflow has also been a god send in trying to understand how certain functions work.
 
 I would also like to point out [Stephan Brennan's article](https://brennan.io/2015/01/16/write-a-shell-in-c/) on building a shell in C to help me get a starting point and a basic version. While I may not have really done much more than the article it was immensely helpful at starting with these. Though I would like to say perhaps the explanation of the code snippets could be more elaborated upon, since I had to do a lot of googling and asking AI to understand what each line did, a little more elaboration would be appreciated I think.
+
+By far the most complicated part of the program was getting the piping logic. It needs you to set file descriptors correctly ensure the commands run concurrently and there are not segmentation faults. Memory management near this was very complicated.
 
 Thats all for it folks. If you do happen to encounted any bugs or undefined bahavior please open a bug report.
