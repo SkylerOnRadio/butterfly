@@ -24,7 +24,7 @@ int isToBeReadFromAFile(char **args) {
 }
 
 int **pipeIndex(char **args) {
-  int count = 1;
+  int count = 0;
   int **indexes = malloc(sizeof(int *));
 
   if (indexes == NULL) {
