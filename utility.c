@@ -24,39 +24,32 @@ int isToBeReadFromAFile(char **args) {
 }
 
 int **pipeIndex(char **args) {
-  int arrSize = 1;
-  int **indexes = malloc(arrSize * sizeof(int *));
-  int *index = malloc(sizeof(int));
-  int count = 0;
+  int count = 1;
+  int **indexes = malloc(sizeof(int *));
 
-  if (indexes == NULL || index == NULL) {
+  if (indexes == NULL) {
     perror("butterfly");
     exit(EXIT_FAILURE);
   }
 
   for (int i = 0; args[i] != NULL; ++i) {
     if (strcmp(args[i], "|") == 0) {
+      int *index = malloc(sizeof(int));
+      if (index == NULL) {
+        perror("butterfly");
+        exit(EXIT_FAILURE);
+      }
+
       *index = i;
       indexes[count] = index;
-      ++arrSize;
-      indexes = realloc(indexes, arrSize * sizeof(int *));
-      index = malloc(sizeof(int));
       ++count;
 
+      indexes = realloc(indexes, (count + 1) * sizeof(int *));
       if (indexes == NULL || index == NULL) {
         perror("butterfly");
         exit(EXIT_FAILURE);
       }
     }
-  }
-
-  free(index);
-
-  arrSize++;
-  indexes = realloc(indexes, arrSize * sizeof(int *));
-  if (indexes == NULL) {
-    perror("butterfly");
-    exit(EXIT_FAILURE);
   }
 
   indexes[count] = NULL;
