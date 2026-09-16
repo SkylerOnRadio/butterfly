@@ -91,8 +91,10 @@ void handleForceQuit(int sig) {
     kill(child_pid, SIGKILL);
     child_pid = -1;
   } else {
-    printf("\n>");
-    fflush(stdout);
+    printf("\n");
+    rl_on_new_line();
+    rl_replace_line("", 0);
+    rl_redisplay();
   }
 }
 
