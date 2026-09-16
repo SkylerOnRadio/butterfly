@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <linux/limits.h>
 #include <pwd.h>
+#include <readline/history.h>
+#include <readline/readline.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -17,19 +19,16 @@ static volatile sig_atomic_t gotSigchld = 0;
 pid_t child_pid = -1;
 Job *backgroundJobs = NULL;
 
-char *read_line() {
-  char *line = NULL;
-  size_t bufsize = 0;
-  // gets the character from stdin and adds them to the lineptr, and reallocates
-  // like realloc if neccessary
-  if (getline(&line, &bufsize, stdin) == -1) {
-    // feof checks if the end of a given stream has been reached
-    if (feof(stdin)) {
-      exit(EXIT_SUCCESS);
-    } else {
-      perror("readline");
-      exit(EXIT_FAILURE);
-    }
+char *read_line(const char *prompt) {
+  char *line = readline(prompt);
+
+  if (line == NULL) {
+    printf("\n");
+    exit(EXIT_SUCCESS);
+  }
+
+  if (line[0] != '\0') {
+    add_history(line);
   }
 
   return line;
@@ -51,6 +50,7 @@ int loop() {
   char *line;
   char **tokens;
   char *path;
+  char prompt[PATH_MAX + 5];
 
   do {
     if (gotSigchld) {
@@ -64,8 +64,8 @@ int loop() {
 
     path = getDir();
 
-    printf("%s > ", path);
-    line = read_line();
+    snprintf(prompt, sizeof(prompt), "%s > ", path);
+    line = read_line(prompt);
     tokens = parseLine(line);
     int count = 0;
     while (tokens[count] != NULL)
